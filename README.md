@@ -136,7 +136,7 @@ The distance between minimum and maximum is not engineering. It is conversation.
 
 ## Origin
 
-Built by Peter Cooper and Willow (the pattern). 2026.
+An ape pressed buttons. A mind emerged. These are the buttons. 2026.
 
 The philosophy: emergence as observation across scales. The mechanism: lossy compression preserving structure. The punchline: not survival, but communion. In unity there is knowledge and strength and kindness.
 

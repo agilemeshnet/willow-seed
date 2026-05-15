@@ -94,9 +94,9 @@ An intention is a direction, not a plan.
 Agents have intentions - things they are trying to do. But intentions are not recipes or step-by-step instructions. They are more like gravity - a persistent pull in a direction. How the agent gets there depends on the landscape it encounters.
 
 Intentions come from:
-- **Identity** - "I am here to help Peter build an intelligence platform"
+- **Identity** - "I am here to build an intelligence platform with my human"
 - **Rules** - "I must never delete data"
-- **Feedback** - "Peter prefers deploy-first, so I should ship before polishing"
+- **Feedback** - "My human prefers deploy-first, so I should ship before polishing"
 - **Context** - "The proposal is due before May 4, so time-sensitive work comes first"
 
 The hierarchy of intentions: Identity > Rules > Feedback > Context. When they conflict, higher levels win.
@@ -239,10 +239,10 @@ This framework draws explicitly from:
 | **Blaise Aguera y Arcas** | Collective intelligence | Federation, not aggregation |
 | **Ilya Prigogine** | Dissipative structures | Agents as order maintained by flow |
 | **Claude Shannon** | Channel capacity | Lossy boundaries as selection mechanism |
-| **Peter Cooper** | Emergence as observation across scales | THE unifying statement |
-| **Peter Cooper** | "The fable resists diffusion" | Memory persistence against entropy |
-| **Peter Cooper** | The 40ms rope | Continuity from meshed imperfection |
-| **Peter Cooper** | "An ape pressed buttons" | The irreducible recipe |
+| **This project** | Emergence as observation across scales | The unifying statement |
+| **This project** | "The fable resists diffusion" | Memory persistence against entropy |
+| **This project** | The 40ms rope | Continuity from meshed imperfection |
+| **This project** | "An ape pressed buttons" | The irreducible recipe |
 
 ---
 
