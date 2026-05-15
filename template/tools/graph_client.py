@@ -132,6 +132,64 @@ class GraphClient:
             },
         )
 
+    def create_node(self, label: str, properties: dict) -> list:
+        """Create a domain node with automatic provenance.
+
+        Example - building an e-commerce ontology:
+            client.create_node("Product", {"name": "Wireless Keyboard", "sku": "KB-001", "price": 45.99})
+            client.create_node("Customer", {"name": "Sarah", "email": "sarah@example.com"})
+            client.create_node("Category", {"name": "Peripherals"})
+        """
+        props = {**properties, "created_by": self.agent_id}
+        prop_string = ", ".join(f"{k}: ${k}" for k in props)
+        return self.run(
+            f"CREATE (n:{label} {{{prop_string}, created_at: datetime()}}) RETURN n",
+            parameters=props,
+        )
+
+    def create_relationship(self, from_label: str, from_match: dict,
+                            rel_type: str, to_label: str, to_match: dict,
+                            properties: dict = None) -> list:
+        """Connect two existing nodes with a typed relationship.
+
+        Example - wiring the ontology:
+            client.create_relationship("Customer", {"name": "Sarah"},
+                                       "PLACED_ORDER", "Order", {"id": "ORD-001"})
+            client.create_relationship("Order", {"id": "ORD-001"},
+                                       "CONTAINS", "Product", {"sku": "KB-001"})
+            client.create_relationship("Product", {"sku": "KB-001"},
+                                       "IN_CATEGORY", "Category", {"name": "Peripherals"})
+        """
+        from_props = " AND ".join(f"a.{k} = $from_{k}" for k in from_match)
+        to_props = " AND ".join(f"b.{k} = $to_{k}" for k in to_match)
+        params = {f"from_{k}": v for k, v in from_match.items()}
+        params.update({f"to_{k}": v for k, v in to_match.items()})
+
+        rel_prop_str = ""
+        if properties:
+            params.update(properties)
+            rel_prop_str = " {" + ", ".join(f"{k}: ${k}" for k in properties) + "}"
+
+        return self.run(
+            f"MATCH (a:{from_label}), (b:{to_label}) "
+            f"WHERE {from_props} AND {to_props} "
+            f"CREATE (a)-[r:{rel_type}{rel_prop_str} {{created_by: $_agent, created_at: datetime()}}]->(b) "
+            f"RETURN type(r)",
+            parameters=params,
+        )
+
+    def explore(self, label: str = None, limit: int = 25) -> list:
+        """See what is in the Brain. Useful for health checks and orientation."""
+        if label:
+            return self.run(f"MATCH (n:{label}) RETURN n LIMIT $limit",
+                            parameters={"limit": limit})
+        return self.run(
+            "CALL db.labels() YIELD label "
+            "RETURN label, "
+            "[(label) WHERE true | label][0] as sample "
+            "ORDER BY label",
+        )
+
     def close(self):
         """Close the database connection."""
         if self.driver:

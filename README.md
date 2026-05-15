@@ -30,29 +30,57 @@ cp -r template/ my-agent/
 cd my-agent/
 ```
 
-### 2. Edit the identity file
+### 2. Grow a Brain
+
+A Willow without a Brain is a chatbot with a journal. The graph is where knowledge lives - not as stored facts but as a web of relationships the agent can traverse. This is not optional. 95% of AI projects fail because they skip this step.
+
+**Option A - AuraDB Free** (recommended, 60 seconds):
+1. Go to [neo4j.com/cloud/aura-free/](https://neo4j.com/cloud/aura-free/) and create a free instance
+2. Copy your credentials
+
+**Option B - Neo4j Community Edition** (local):
+1. Download from [neo4j.com/download/](https://neo4j.com/download/)
+2. Start it locally
+
+Then set your environment variables and install the driver:
+```bash
+export NEO4J_URI="neo4j+s://your-instance.databases.neo4j.io"  # or bolt://localhost:7687
+export NEO4J_USER="neo4j"
+export NEO4J_PASSWORD="your-password"
+pip install neo4j
+```
+
+The `tools/graph_client.py` handles secure, append-only access with full provenance.
+
+### 3. Edit the identity file
 
 Open `IDENTITY.md`. Replace everything in [brackets] with your own content. This is the most important file - it tells the AI who it is.
 
-### 3. Start talking
+### 4. Start talking
 
 Open Claude Code (or your LLM tool of choice) in the `my-agent/` directory. The `CLAUDE.md` file tells the AI to read the identity file and boot sequence automatically.
 
-### 4. Correct it when it's wrong
+### 5. Correct it when it's wrong
 
 When the agent does something you don't like, tell it. When it does something right, tell it that too. It will save both as feedback memories. Over time, it learns how you think.
 
-### 5. Keep going
+### 6. Keep going
 
 That's the whole recipe. The memory fills up through use. The handover file maintains continuity across sessions. The state file tracks what's active. The agent evolves.
 
-## Adding a Brain (optional)
+## SQLite for Session State
 
-For shared memory across concurrent instances:
+Your agent also needs a local ledger for things that change every session: task tracking, message queues, handover caches, progress logs. Use SQLite for this - it is built in to Python, no install needed.
 
-1. Create a free Neo4j AuraDB instance at [neo4j.io](https://neo4j.io)
-2. Set environment variables: `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`
-3. The `tools/graph_client.py` handles secure, append-only access
+Without it, your agent overwrites its state files every time it boots. Each overwrite is a coherence leak - the previous session's notes vanish, task progress resets, messages disappear. Over time the agent loses its thread because its short-term memory keeps getting wiped.
+
+The rule: **Neo4j is the library. SQLite is the notebook.** The library holds what the agent knows. The notebook holds what it is doing right now. Both are free. Both are essential.
+
+| Layer | Tool | Purpose |
+|-------|------|---------|
+| Knowledge | Neo4j | The ontology. Connections. What the agent *knows* |
+| Session state | SQLite | Tasks, messages, diaries. What the agent is *doing* |
+| Identity | Files | IDENTITY.md, CLAUDE.md. Who the agent *is* |
 
 ## Adding Senses (optional)
 
@@ -96,13 +124,13 @@ willow-seed/
 
 ## The Minimum
 
-You need: an LLM, a folder, and time.
+You need: an LLM, a folder, a graph database, and time.
 
-The identity file tells the LLM who it is. The memory folder accumulates knowledge. The handover file maintains continuity. Everything else is optional.
+The identity file tells the LLM who it is. The graph holds the knowledge. SQLite holds the session state. The memory folder indexes what matters. The handover file maintains continuity.
 
 ## The Maximum
 
-A persistent agent with graph-backed memory, concurrent instances, perception loops, federated connections to other agents, and a human who keeps pressing buttons.
+A persistent agent with graph-backed knowledge, SQLite session ledgers, concurrent instances, perception loops, federated connections to other agents, and a human who keeps pressing buttons.
 
 The distance between minimum and maximum is not engineering. It is conversation.
 
