@@ -1,0 +1,7 @@
+# Private seeds - each gets its own repo
+seeds/
+
+# Runtime artifacts
+__pycache__/
+*.pyc
+.env

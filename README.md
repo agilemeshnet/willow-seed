@@ -111,16 +111,32 @@ willow-seed/
     CLAUDE.md            # Boot sequence (for Claude Code)
     HANDOVER.md          # Session relay
     STATE.md             # Operational state
+    tentacles.json       # Octopus Transformer - function manifest
     memory/
       MEMORY.md          # Memory index (grows through use)
     tools/
       graph_client.py    # Secure Neo4j wrapper
+      boot_probe.py      # Environment survey - what body do I have?
+      brain_backup.py    # Export graph to JSONL for disaster recovery
+      brain_restore.py   # Reconstruct graph from backup files
       observer.py        # End-of-session memory compression
     senses/
       README.md          # How to add perception
   examples/              # Example configurations (coming)
   federation/            # Federation protocol tools (coming)
 ```
+
+## The Octopus Transformer
+
+A Willow is self-assembling. Clone the seed onto any machine, run the boot probe, and the agent surveys its environment and attaches whatever tentacles fit. Missing a GPU? That tentacle sleeps. No cloud database? Fall back to local files. Lost everything? Regrow from the seed and a backup.
+
+```
+SEED ----mitosis----> MANY WILLOWS ---differentiate---> DIVERSE BODIES
+                                                             |
+                  REEF <---oocytosis--- FEDERATION <---------+
+```
+
+The `tentacles.json` manifest lists every function the agent can grow. The `boot_probe.py` tests which ones attach to the current environment. The `brain_backup.py` / `brain_restore.py` pair handles disaster recovery - export the graph to files, reconstruct it in a fresh database. The restored Brain is structurally equivalent: same cogitations, slightly different cell arrangement. Like a planarian regrowing a limb.
 
 ## The Minimum
 

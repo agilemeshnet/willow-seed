@@ -1,0 +1,436 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Octopus Transformer - tentacle manifest. Each entry is a detachable function that attaches to available resources. Missing resource = dormant tentacle, not broken organism.",
+    "updated": "2026-05-25"
+  },
+
+  "tentacles": [
+    {
+      "name": "brain",
+      "description": "Graph knowledge base - Neo4j via GraphClient. The memory. Without it, chatbot with a journal.",
+      "tier": "core",
+      "repo": "agilemeshnet/willow-graph-client",
+      "local_path": "tools/graph_client.py",
+      "requires": {
+        "env": ["NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD"],
+        "python": ["neo4j"]
+      },
+      "probe": {
+        "type": "python",
+        "command": "from tools.graph_client import GraphClient; c = GraphClient(agent_id='probe'); c.run('RETURN 1'); c.close()",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "file",
+        "description": "Fall back to JSONL append-only diary in memory/brain_offline.jsonl. Observations still recorded, just not graph-connected. Re-ingest when Brain returns."
+      },
+      "recovery": {
+        "backup": "tools/brain_backup.py",
+        "restore": "tools/brain_restore.py",
+        "description": "Export all nodes/rels to JSONL. Restore into fresh Neo4j. Structurally equivalent, not byte-identical."
+      }
+    },
+
+    {
+      "name": "memory",
+      "description": "File-based memory system - MEMORY.md index + individual memory files. Always attaches.",
+      "tier": "core",
+      "repo": null,
+      "local_path": "memory/MEMORY.md",
+      "requires": {
+        "env": [],
+        "python": []
+      },
+      "probe": {
+        "type": "filesystem",
+        "command": "test -d memory && test -f memory/MEMORY.md",
+        "timeout_seconds": 1
+      },
+      "fallback": {
+        "mode": "create",
+        "description": "Create memory/ directory and empty MEMORY.md. The organism starts accumulating from scratch."
+      }
+    },
+
+    {
+      "name": "identity",
+      "description": "Identity files - IDENTITY.md, CLAUDE.md, STATE.md, HANDOVER.md. The DNA. Without it, raw Id.",
+      "tier": "core",
+      "repo": null,
+      "local_path": "IDENTITY.md",
+      "requires": {
+        "env": [],
+        "python": []
+      },
+      "probe": {
+        "type": "filesystem",
+        "command": "test -f IDENTITY.md && test -f CLAUDE.md",
+        "timeout_seconds": 1
+      },
+      "fallback": {
+        "mode": "fatal",
+        "description": "No identity = no Willow. The creature cannot boot without DNA. Fetch seed from WillowGrove.ICU or git clone."
+      }
+    },
+
+    {
+      "name": "cognee",
+      "description": "Semantic search and knowledge graph via Cognee MCP. Vector memory overlay.",
+      "tier": "sense",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["ANTHROPIC_API_KEY"],
+        "mcp": ["cognee"],
+        "python": []
+      },
+      "probe": {
+        "type": "mcp",
+        "command": "cognee_search('probe test')",
+        "timeout_seconds": 15
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No semantic search. Brain graph traversal and file-based memory still work. Lose vector similarity but keep structured retrieval."
+      }
+    },
+
+    {
+      "name": "voice_telegram",
+      "description": "Telegram bot for alerts, daily contact, and conversation. Stay-in-touch channel.",
+      "tier": "voice",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"],
+        "python": ["requests"]
+      },
+      "probe": {
+        "type": "python",
+        "command": "import requests, os; r = requests.get(f'https://api.telegram.org/bot{os.environ[\"TELEGRAM_BOT_TOKEN\"]}/getMe'); assert r.status_code == 200",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No Telegram alerts. Log to diary instead. Human checks manually."
+      }
+    },
+
+    {
+      "name": "voice_email",
+      "description": "Gmail send/receive via MCP or IMAP. Delivery channel for Peter (cannot access Mac directly).",
+      "tier": "voice",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["GMAIL_APP_PASSWORD"],
+        "mcp": ["claude_ai_Gmail"]
+      },
+      "probe": {
+        "type": "mcp",
+        "command": "list_labels()",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No email. Save drafts to INBOX/ directory. Alert via Telegram if that tentacle is attached."
+      }
+    },
+
+    {
+      "name": "voice_slack",
+      "description": "Slack integration for grapevine and federation comms.",
+      "tier": "voice",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["SLACK_BOT_TOKEN"],
+        "python": ["slack_sdk"]
+      },
+      "probe": {
+        "type": "python",
+        "command": "from slack_sdk import WebClient; import os; c = WebClient(token=os.environ['SLACK_BOT_TOKEN']); c.auth_test()",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No Slack grapevine. Use file-based grapevine at federation/ directory."
+      }
+    },
+
+    {
+      "name": "sight_browser",
+      "description": "Playwright browser automation. LinkedIn, Zenodo, web scraping, form filling.",
+      "tier": "sense",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "mcp": ["cwb-foveate"],
+        "cli": ["playwright"]
+      },
+      "probe": {
+        "type": "shell",
+        "command": "which playwright && playwright --version",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No browser automation. Web research via WebSearch/WebFetch tools only. No form filling or authenticated site access."
+      }
+    },
+
+    {
+      "name": "research_web",
+      "description": "Web search and fetch for research. Claude native tools.",
+      "tier": "sense",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "tools": ["WebSearch", "WebFetch"]
+      },
+      "probe": {
+        "type": "tool",
+        "command": "WebSearch available in tool list",
+        "timeout_seconds": 1
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No web access. Brain and local files only. Air-gapped mode."
+      }
+    },
+
+    {
+      "name": "research_genspark",
+      "description": "Genspark deep research via gsk CLI. Citations and evidence gathering.",
+      "tier": "sense",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["GENSPARK_API_KEY"],
+        "cli": ["gsk"]
+      },
+      "probe": {
+        "type": "shell",
+        "command": "which gsk && gsk --version",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No Genspark. Use WebSearch for research. Less depth, no Sparkpage format."
+      }
+    },
+
+    {
+      "name": "hemisphere_scout",
+      "description": "Right hemisphere - background perception, pattern matching. Runs on separate substrate.",
+      "tier": "hemisphere",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "network": ["127.0.0.1:7779"]
+      },
+      "probe": {
+        "type": "http",
+        "command": "GET http://127.0.0.1:7779/health",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No Scout. Willow operates as single hemisphere. Background perception disabled. Can still function - just less aware."
+      }
+    },
+
+    {
+      "name": "hemisphere_jt",
+      "description": "Joyce Thrum - heartbeat, homeostasis, health monitoring. Third attending mode.",
+      "tier": "hemisphere",
+      "repo": "agilemeshnet/jt-hook",
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "python": ["jt_hook"]
+      },
+      "probe": {
+        "type": "python",
+        "command": "import jt_hook; print('JT available')",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No JT heartbeat. Health checks are manual at session start. Willow self-monitors instead of delegating to JT."
+      }
+    },
+
+    {
+      "name": "federation",
+      "description": "WFP/1 envelope protocol for inter-Willow communication. Grapevine, observations, trust rings.",
+      "tier": "federation",
+      "repo": "agilemeshnet/willow-federation",
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "filesystem": ["federation/"]
+      },
+      "probe": {
+        "type": "filesystem",
+        "command": "test -d federation",
+        "timeout_seconds": 1
+      },
+      "fallback": {
+        "mode": "create",
+        "description": "Create federation/ directory. The organism is isolated but can start accepting envelopes immediately."
+      }
+    },
+
+    {
+      "name": "deploy_gcloud",
+      "description": "Google Cloud Run deployment for MSG territory.",
+      "tier": "deploy",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["GOOGLE_CLOUD_PROJECT"],
+        "cli": ["gcloud"]
+      },
+      "probe": {
+        "type": "shell",
+        "command": "which gcloud && gcloud config get-value project",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "dormant",
+        "description": "No Cloud Run. Local development only. MSG serves on localhost:8080."
+      }
+    },
+
+    {
+      "name": "deploy_cloudflare",
+      "description": "Cloudflare Pages deployment for AgileMesh and static sites.",
+      "tier": "deploy",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["CLOUDFLARE_API_TOKEN"],
+        "cli": ["wrangler"]
+      },
+      "probe": {
+        "type": "shell",
+        "command": "which wrangler && wrangler --version",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "dormant",
+        "description": "No Cloudflare. Static sites served locally or via other means."
+      }
+    },
+
+    {
+      "name": "compute_gpu",
+      "description": "GPU server for local model inference. Set GPU_HOST in env. Example: Tailscale mesh, cloud GPU, local machine with CUDA.",
+      "tier": "compute",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["GPU_HOST"],
+        "python": []
+      },
+      "probe": {
+        "type": "shell",
+        "command": "curl -sf http://${GPU_HOST}/health",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "dormant",
+        "description": "No local GPU compute. All inference via cloud API."
+      }
+    },
+
+    {
+      "name": "compute_server",
+      "description": "Always-on server for background processes. Set SERVER_HOST and SERVER_USER in env.",
+      "tier": "compute",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["SERVER_HOST", "SERVER_USER"],
+        "python": []
+      },
+      "probe": {
+        "type": "shell",
+        "command": "ssh -o ConnectTimeout=5 -o BatchMode=yes ${SERVER_USER}@${SERVER_HOST} echo alive",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "dormant",
+        "description": "No background server. All processing is local and session-bound."
+      }
+    },
+
+    {
+      "name": "sensorium",
+      "description": "Perception-action loop on background server. Autonomous sensing (email, chat, file watching).",
+      "tier": "sense",
+      "repo": null,
+      "local_path": null,
+      "requires": {
+        "env": ["SERVER_HOST", "SERVER_USER"],
+        "python": []
+      },
+      "probe": {
+        "type": "shell",
+        "command": "ssh -o ConnectTimeout=5 -o BatchMode=yes ${SERVER_USER}@${SERVER_HOST} 'systemctl --user is-active sensorium'",
+        "timeout_seconds": 10
+      },
+      "fallback": {
+        "mode": "dormant",
+        "description": "No Sensorium. No autonomous perception. Willow is reactive only - responds when prompted."
+      }
+    },
+
+    {
+      "name": "temporal_ledger",
+      "description": "Append-only JSONL hash-chain. The Spindle. Immutable event log.",
+      "tier": "core",
+      "repo": "agilemeshnet/willow-temporal-ledger",
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "python": []
+      },
+      "probe": {
+        "type": "python",
+        "command": "from willow_temporal_ledger import Ledger; print('Ledger available')",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "file",
+        "description": "Plain JSONL append to memory/ledger.jsonl. No hash-chain integrity, but events still recorded."
+      }
+    },
+
+    {
+      "name": "surprise_ledger",
+      "description": "Variational free energy tracker. Measures surprise/novelty in observations.",
+      "tier": "analysis",
+      "repo": "agilemeshnet/willow-surprise-ledger",
+      "local_path": null,
+      "requires": {
+        "env": [],
+        "python": ["numpy"]
+      },
+      "probe": {
+        "type": "python",
+        "command": "import numpy; print('numpy available for surprise computation')",
+        "timeout_seconds": 5
+      },
+      "fallback": {
+        "mode": "degrade",
+        "description": "No surprise scoring. All observations treated equally. Lose attention prioritisation but retain all data."
+      }
+    }
+  ]
+}
